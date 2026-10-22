@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+"""Claim / release / list eCTF boards on the board Pi (talks to its dashboard API).
+
+  ectf-boards                       # same as `status`
+  ectf-boards status [--json]
+  ectf-boards claim   <board> [--for 2h] [--note TEXT]
+  ectf-boards release <board> [--force]
+
+Your name comes from $ECTF_USER (else $USER); use the same name when flashing
+(remote-flash.sh / remote-debug.sh send $ECTF_USER too) or the Pi will treat a
+board you claimed as someone else's. Pi URL: $ECTF_DASHBOARD
+(default http://100.92.231.53:8080, LAN: http://10.37.1.253:8080).
+"""
+
+import argparse
+import json
+import os
+import sys
+import time
+import urllib.error
+import urllib.request
+
+URL = os.environ.get("ECTF_DASHBOARD", "http://100.92.231.53:8080").rstrip("/")
+NAME = os.environ.get("ECTF_USER") or os.environ.get("USER") or os.environ.get("USERNAME") or ""
+
+
+def api(path: str, body: dict | None = None) -> dict:
+    req = urllib.request.Request(URL + path)
+    if body is not None:
+        req.data = json.dumps(body).encode()
+        req.add_header("Content-Type", "application/json")
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return json.load(r)
+    except urllib.error.HTTPError as e:
+        try:
+            msg = json.load(e).get("error", e.reason)
+        except ValueError:
+            msg = e.reason
+        sys.exit(f"error: {msg}")
+    except (urllib.error.URLError, TimeoutError) as e:
+        sys.exit(f"error: can't reach {URL} ({getattr(e, 'reason', e)}); set ECTF_DASHBOARD?")
+
+
+def hm(t: float) -> str:
+    return time.strftime("%H:%M", time.localtime(t))
+
+
+def ago(t: float, now: float) -> str:
+    s = int(now - t)
+    return f"{s}s" if s < 60 else f"{s // 60}m" if s < 3600 else f"{s // 3600}h{s % 3600 // 60:02d}m"
+
+
+def show(st: dict) -> None:
+    now = st["now"]
+    print(f"{'BOARD':<8} {'CLAIM':<32} {'ACTIVITY':<26} {'BOOTLOADER':<18} GDB")
+    for b in st["boards"]:
+        c, a, bl = b["claim"], b["activity"], b["bootloader"]
+        cs = "free"
+        if c:
+            cs = f"{c['name']} until {hm(c['until'])}" + (" (you)" if c["name"].casefold() == NAME.casefold() else "")
+        acts = f"{a['action']} by {a['user']} {ago(a['since'], now)}" if a else ("PROBE MISSING" if not b["port_present"] else "idle")
+        bls = f"{bl['version']} {'SECURE' if str(bl.get('secure')) == 'True' else 'insecure'}" if bl else "?"
+        print(f"{b['name']:<8} {cs[:32]:<32} {acts[:26]:<26} {bls:<18} {b['gdb_port'] or '-'}")
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    sub = ap.add_subparsers(dest="cmd")
+    s = sub.add_parser("status"); s.add_argument("--json", action="store_true")
+    s = sub.add_parser("claim"); s.add_argument("board")
+    s.add_argument("--for", dest="dur", default="2h", help="e.g. 45m, 2h, 1h30m (max 12h)")
+    s.add_argument("--note", default="")
+    s = sub.add_parser("release"); s.add_argument("board")
+    s.add_argument("--force", action="store_true", help="release someone else's claim")
+    a = ap.parse_args()
+
+    if a.cmd in ("claim", "release") and not NAME:
+        sys.exit("error: set ECTF_USER to your name")
+    match a.cmd:
+        case None | "status":
+            st = api("/api/status")
+            print(json.dumps(st, indent=1)) if getattr(a, "json", False) else show(st)
+        case "claim":
+            c = api("/api/claim", {"board": a.board, "name": NAME, "duration": a.dur, "note": a.note})["claim"]
+            print(f"{a.board} claimed by {c['name']} until {hm(c['until'])}")
+        case "release":
+            api("/api/release", {"board": a.board, "name": NAME, "force": a.force})
+            print(f"{a.board} released")
+
+
+if __name__ == "__main__":
+    main()

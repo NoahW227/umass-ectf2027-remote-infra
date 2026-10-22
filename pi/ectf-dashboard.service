@@ -1,0 +1,17 @@
+# systemd *user* unit for the board dashboard + reservation API.
+# Install (as ectf):  cp ectf-dashboard.service ~/.config/systemd/user/
+#                     systemctl --user daemon-reload && systemctl --user enable --now ectf-dashboard
+# Needs lingering so it runs without a login:  loginctl enable-linger ectf
+# Logs: journalctl --user -u ectf-dashboard -f
+[Unit]
+Description=eCTF board dashboard and reservations (boardctl.py serve)
+
+[Service]
+ExecStart=/usr/bin/python3 %h/ectf2027/boardctl.py serve --host 0.0.0.0 --port 8080
+Restart=on-failure
+RestartSec=3
+# Pi 2: keep it light.
+Nice=5
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>eCTF Boards</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --surface: #ffffff; --surface-2: #f0f2f5; --border: #dfe3e8;
+    --text: #1b1f24; --muted: #5d6673; --faint: #8a93a0;
+    --accent: #2f6fe4; --accent-text: #ffffff;
+    --free: #1f8a4c; --free-bg: #e5f5ec;
+    --mine: #2f6fe4; --mine-bg: #e6eefc;
+    --taken: #b4590b; --taken-bg: #fcefe1;
+    --busy: #c0303a; --busy-bg: #fbe6e7;
+    --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .08);
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1216; --surface: #171b21; --surface-2: #1e232b; --border: #2a313b;
+      --text: #e6e9ee; --muted: #9aa3af; --faint: #6b7480;
+      --accent: #5b8ff0; --accent-text: #0b0e12;
+      --free: #4cc27e; --free-bg: #133022;
+      --mine: #6d9cf3; --mine-bg: #172540;
+      --taken: #eba05a; --taken-bg: #352411;
+      --busy: #f0727a; --busy-bg: #3a1619;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 20px 16px 48px; }
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-bottom: 18px; }
+  h1 { font-size: 20px; margin: 0; letter-spacing: -.01em; }
+  .conn { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); display: inline-block; }
+  .dot.ok { background: var(--free); }
+  .dot.bad { background: var(--busy); }
+  .me { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+  input, select, button { font: inherit; }
+  input, select {
+    background: var(--surface); color: var(--text); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 10px; min-width: 0;
+  }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  #me { width: 160px; }
+  button {
+    border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+    border-radius: 8px; padding: 6px 12px; cursor: pointer; white-space: nowrap;
+  }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+  button.link { background: none; border: none; color: var(--muted); padding: 6px 4px; text-decoration: underline; }
+  button:disabled { opacity: .5; cursor: default; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: var(--shadow); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .card-head { display: flex; align-items: center; gap: 10px; }
+  .card-head h2 { font-size: 17px; margin: 0; }
+  .pill { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; }
+  .pill.free { color: var(--free); background: var(--free-bg); }
+  .pill.mine { color: var(--mine); background: var(--mine-bg); }
+  .pill.taken { color: var(--taken); background: var(--taken-bg); }
+  .pill.busy { color: var(--busy); background: var(--busy-bg); }
+  .pill.missing { color: var(--busy); background: var(--busy-bg); }
+  .holder { font-size: 14px; }
+  .holder b { font-weight: 600; }
+  .sub { color: var(--muted); font-size: 13px; }
+  .activity { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--busy); font-weight: 500; }
+  .activity .dot { background: var(--busy); animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .25; } }
+  @media (prefers-reduced-motion: reduce) { .activity .dot { animation: none; } }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; margin: 0; font-size: 13px; }
+  dt { color: var(--faint); }
+  dd { margin: 0; color: var(--muted); overflow-wrap: anywhere; }
+  .mono { font-family: var(--mono); font-size: 12px; }
+  .secure { color: var(--busy); font-weight: 600; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-top: 4px; border-top: 1px solid var(--border); margin-top: 2px; }
+  .actions input.note { flex: 1 1 120px; }
+  .err { color: var(--busy); font-size: 13px; min-height: 0; }
+  h3 { font-size: 15px; margin: 28px 0 10px; }
+  .log { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .log table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .log td { padding: 7px 12px; border-top: 1px solid var(--border); vertical-align: top; }
+  .log tr:first-child td { border-top: none; }
+  .log td.t { color: var(--faint); white-space: nowrap; width: 1%; font-variant-numeric: tabular-nums; }
+  .log td.b { white-space: nowrap; width: 1%; font-weight: 600; }
+  .log .empty { padding: 14px; color: var(--faint); }
+  .help { margin-top: 28px; font-size: 13px; color: var(--muted); }
+  .help code { font-family: var(--mono); font-size: 12px; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+  .help p { margin: 4px 0; }
+  @media (max-width: 520px) {
+    .me { margin-left: 0; width: 100%; }
+    #me { flex: 1; }
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>eCTF Boards</h1>
+    <span class="conn"><span class="dot" id="conn-dot"></span><span id="conn">connecting…</span></span>
+    <label class="me">You are <input id="me" placeholder="your name" maxlength="32" autocomplete="nickname"></label>
+  </header>
+
+  <div class="grid" id="boards"></div>
+
+  <h3>Recent activity</h3>
+  <div class="log" id="log"></div>
+
+  <div class="help">
+    <p>Claim a board before a long session; claims expire on their own. Flash/debug on a board someone else claimed is refused (<code>ECTF_FORCE=1</code> overrides).</p>
+    <p>Flash: <code>ECTF_USER=&lt;name&gt; ECTF_BOARD=board1 cargo run --release</code> · Debug: <code>./remote-debug.sh</code> · CLI: <code>ectf-boards claim board1 --for 2h</code></p>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = (sel) => document.querySelector(sel);
+const meInput = $("#me");
+let state = null;
+let pending = new Set();          // boards with a request in flight
+const errors = {};                // board -> last error message
+const drafts = {};                // board -> {duration, note} the user is editing
+
+function storeGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
+function storeSet(k, v) { try { localStorage.setItem(k, v); } catch {} }
+meInput.value = storeGet("ectf-name") || "";
+meInput.addEventListener("input", () => { storeSet("ectf-name", meInput.value.trim()); render(); });
+const me = () => meInput.value.trim();
+const DOING = { flash: "flashing", debug: "debugging", status: "checking status", reset: "resetting", bootloader: "in bootloader" };
+const doing = (action) => DOING[action] || action;
+const same = (a, b) => a && b && a.toLocaleLowerCase() === b.toLocaleLowerCase();
+
+function el(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") e.className = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (v !== false && v != null) e.setAttribute(k, v === true ? "" : v);
+  }
+  for (const kid of kids.flat()) if (kid != null && kid !== false) e.append(kid);
+  return e;
+}
+
+const hm = (t) => new Date(t * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+function dur(s) {
+  s = Math.max(0, Math.round(s));
+  if (s < 60) return `${s}s`;
+  const m = Math.round(s / 60);
+  return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, "0")}m`;
+}
+const ago = (t) => `${dur(state.now - t)} ago`;
+const kb = (n) => (n ? `${Math.round(n / 1024)} KB` : "");
+
+async function api(path, body) {
+  const r = await fetch(path, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {});
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+  return j;
+}
+
+async function act(board, path, body) {
+  if (!me()) { errors[board] = "Enter your name at the top first."; render(); meInput.focus(); return; }
+  pending.add(board); delete errors[board]; render();
+  try { await api(path, { board, name: me(), ...body }); delete drafts[board]; }
+  catch (e) { errors[board] = e.message; }
+  pending.delete(board);
+  await refresh();
+}
+
+function boardCard(b) {
+  const c = b.claim, a = b.activity, bl = b.bootloader, lf = b.last_flash;
+  const mine = c && same(c.name, me());
+  let pill;
+  if (!b.port_present) pill = el("span", { class: "pill missing" }, "probe missing");
+  else if (a) pill = el("span", { class: "pill busy" }, doing(a.action));
+  else if (!c) pill = el("span", { class: "pill free" }, "free");
+  else pill = el("span", { class: mine ? "pill mine" : "pill taken" }, mine ? "yours" : "claimed");
+
+  const holder = c
+    ? el("div", { class: "holder" }, "Claimed by ", el("b", {}, c.name),
+        el("div", { class: "sub" }, `until ${hm(c.until)} · ${dur(c.until - state.now)} left`, c.note ? ` · ${c.note}` : ""))
+    : el("div", { class: "holder sub" }, "Not claimed — anyone can use it.");
+
+  const activity = a && el("div", { class: "activity" }, el("span", { class: "dot" }),
+    `${doing(a.action)[0].toUpperCase() + doing(a.action).slice(1)} · ${a.user} · ${dur(state.now - a.since)}`);
+
+  const blText = bl
+    ? [bl.version || "?", " · ", bl.secure === "True" || bl.secure === true
+        ? el("span", { class: "secure" }, "SECURE (attack board)") : "insecure",
+       bl.design ? ` · ${bl.design}` : " · no design", el("span", { class: "sub" }, ` (${ago(bl.at)})`)]
+    : el("span", { class: "sub" }, "unknown — run status");
+  const lfText = lf
+    ? [`${lf.user} · ${ago(lf.at)}`, lf.result && lf.result !== "ok" ? ` · ${lf.result}` : "",
+       lf.image ? el("div", { class: "mono" }, lf.image, lf.size ? ` · ${kb(+lf.size)}` : "") : ""]
+    : el("span", { class: "sub" }, "none recorded");
+
+  const details = el("dl", {},
+    el("dt", {}, "Bootloader"), el("dd", {}, blText),
+    el("dt", {}, "Last flash"), el("dd", {}, lfText),
+    el("dt", {}, "GDB port"), el("dd", { class: "mono" }, b.gdb_port ?? "—"),
+    el("dt", {}, "Pins"), el("dd", { class: "mono" }, `NRST GPIO${b.nrst} · PB21 GPIO${b.pb21}`),
+    el("dt", {}, "Serial"), el("dd", { class: "mono", title: b.port }, b.port.replace(/^.*usb-0:/, "usb ")));
+
+  const busy = pending.has(b.name);
+  const d = drafts[b.name] || (drafts[b.name] = { duration: "2h", note: "" });
+  const durSel = el("select", { "aria-label": "duration", onchange: (e) => (d.duration = e.target.value) },
+    ["30m", "1h", "2h", "4h", "8h", "12h"].map((v) => el("option", { value: v, selected: v === d.duration }, v)));
+  let actions;
+  if (!c) {
+    const note = el("input", { class: "note", placeholder: "note (optional)", maxlength: 80, value: d.note,
+      oninput: (e) => (d.note = e.target.value) });
+    actions = [durSel, note, el("button", { class: "primary", disabled: busy,
+      onclick: () => act(b.name, "/api/claim", { duration: d.duration, note: d.note }) }, "Claim")];
+  } else if (mine) {
+    actions = [durSel, el("button", { disabled: busy,
+      onclick: () => act(b.name, "/api/claim", { duration: d.duration }) }, "Extend"),
+      el("button", { class: "primary", disabled: busy, onclick: () => act(b.name, "/api/release", {}) }, "Release")];
+  } else {
+    actions = [el("span", { class: "sub" }, `Ask ${c.name}, or`), el("button", { class: "link", disabled: busy,
+      onclick: () => confirm(`Release ${b.name} from ${c.name}?`) && act(b.name, "/api/release", { force: true }) },
+      "force release")];
+  }
+
+  return el("section", { class: "card", "aria-label": b.name },
+    el("div", { class: "card-head" }, el("h2", {}, b.name), pill),
+    holder, activity, details,
+    el("div", { class: "actions" }, actions),
+    errors[b.name] && el("div", { class: "err", role: "alert" }, errors[b.name]));
+}
+
+const KIND = {
+  claim: (e) => `claimed until ${hm(e.until)}${e.note ? ` (${e.note})` : ""}`,
+  extend: (e) => `extended to ${hm(e.until)}`,
+  release: () => "released",
+  "force-release": (e) => `force-released (was ${e.holder})`,
+  flash: (e) => `flashed${e.image ? ` ${e.image}` : ""}${e.size ? ` · ${kb(+e.size)}` : ""}${e.result && e.result !== "ok" ? ` — ${e.result}` : ""}`,
+  status: (e) => `bootloader ${e.version ?? "?"}${e.secure === "True" ? " SECURE" : ""}${e.design ? ` · ${e.design}` : ""}`,
+  debug: () => "started a debug session",
+  force: (e) => `used ECTF_FORCE (${e.action}) while claimed by ${e.holder}`,
+};
+
+function render() {
+  if (!state) return;
+  // Keep focus/caret in a note field across re-renders.
+  const focused = document.activeElement;
+  const refocus = focused && focused.closest(".card") && focused.matches("input")
+    ? { board: focused.closest(".card").getAttribute("aria-label"), pos: focused.selectionStart } : null;
+  $("#boards").replaceChildren(...state.boards.map(boardCard));
+  if (refocus) {
+    const inp = document.querySelector(`.card[aria-label="${CSS.escape(refocus.board)}"] input.note`);
+    if (inp) { inp.focus(); inp.setSelectionRange(refocus.pos, refocus.pos); }
+  }
+  const rows = state.events.map((e) => el("tr", {},
+    el("td", { class: "t", title: new Date(e.t * 1000).toLocaleString() }, hm(e.t)),
+    el("td", { class: "b" }, e.board),
+    el("td", {}, el("b", {}, e.user), " ", (KIND[e.kind] || ((x) => x.kind))(e))));
+  $("#log").replaceChildren(rows.length ? el("table", {}, el("tbody", {}, rows)) : el("div", { class: "empty" }, "Nothing yet."));
+}
+
+async function refresh() {
+  try {
+    state = await api("/api/status");
+    $("#conn").textContent = `updated ${new Date().toLocaleTimeString()}`;
+    $("#conn-dot").classList.remove("bad"); $("#conn-dot").classList.add("ok");
+  } catch (e) {
+    $("#conn").textContent = `can't reach the Pi (${e.message})`;
+    $("#conn-dot").classList.remove("ok"); $("#conn-dot").classList.add("bad");
+  }
+  // Re-rendering would close an open dropdown; catch up when it loses focus.
+  if (document.activeElement?.tagName !== "SELECT") render();
+}
+document.addEventListener("focusout", (e) => { if (e.target.tagName === "SELECT") setTimeout(render, 0); });
+
+refresh();
+setInterval(() => { if (!document.hidden) refresh(); }, 3000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+</script>
+</body>
+</html>

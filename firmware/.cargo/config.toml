@@ -1,0 +1,11 @@
+# Minimal cargo config for flashing through the board Pi.
+# Merge this into your project's .cargo/config.toml and put remote-flash.sh /
+# remote-debug.sh next to Cargo.toml. Keep your project's own rustflags
+# (linker scripts such as -Tlink.x) and [env] alongside it.
+
+[target.'cfg(all(target_arch = "arm", target_os = "none"))']
+# `cargo run` -> build locally, flash on the Pi ($ECTF_BOARD, see remote-flash.sh).
+runner = "./remote-flash.sh"
+
+[build]
+target = "thumbv6m-none-eabi"   # MSPM0L2228 = Cortex-M0+
