@@ -1,6 +1,6 @@
-# Remote eCTF Boards
+# The Hash Slinging Flasher: Remote eCTF board access
 
-A Raspberry Pi in the lab hosts our MSP-LITO-L2228 boards (TI MSPM0L2228 with the MITRE eCTF bootloader). You build firmware on your own machine, then use this repo's scripts to flash it, debug it with GDB, and talk to it over serial. A shared dashboard shows who is using which board.
+A Raspberry Pi in the cybersec room hosts our MSP-LITO-L2228 boards (TI MSPM0L2228 with the MITRE eCTF bootloader). You build firmware on your own machine, then use this repo's scripts to flash it, debug it with GDB, and talk to it over serial. A shared dashboard shows who is using which board.
 
 | What | Where |
 |---|---|
@@ -33,8 +33,8 @@ ectf-boards release board1                   # done
 
 ### 1.1 Network access
 
-- **Off-site:** join the Tailscale network. Ask the maintainer for an invite, then use the `100.92.231.53` addresses.
-- **In the lab:** use the LAN addresses and set `ECTF_PI=ectf@10.37.1.253` and `ECTF_DASHBOARD=http://10.37.1.253:8080`.
+- **Off-site:** join the Tailscale network. Ask Noah for an invite, then use the `100.92.231.53` address.
+- **In the room:** connect to OWS and use the LAN address. You may want to set `ECTF_PI=ectf@10.37.1.253` and `ECTF_DASHBOARD=http://10.37.1.253:8080`.
 
 Check it by opening the dashboard in a browser.
 
@@ -50,7 +50,7 @@ ssh ectf@100.92.231.53 '~/ectf2027/ectf.sh list'   # board table, no password pr
 
 ### 1.3 Local tools
 
-- **`rust-objcopy`**, which `remote-flash.sh` uses to turn your ELF into a raw binary. You need it even for non-Rust projects:
+- **`rust-objcopy`**, which `remote-flash.sh` uses to turn your ELF into a raw binary.
   ```sh
   rustup component add llvm-tools
   cargo install cargo-binutils
@@ -298,7 +298,7 @@ Maintainers: the server side is in `pi/`, and the design notes and gotchas are i
 | `board1 is claimed by alice until 15:30` | Someone else holds it. Pick another board, ask them, or check that your `ECTF_USER` matches your own claim. |
 | `board1 is busy: bob (flash since 14:02)` | Another action is running right now. Wait for it to finish. |
 | A password prompt, or `Permission denied (publickey,password)` | Your SSH key isn't on the Pi: see [1.2](#12-ssh-key). |
-| `ssh: connect to host ... timed out` | Not on Tailscale / the lab LAN, or the Pi is down. Try the dashboard URL. |
+| `ssh: connect to host ... timed out` | Not on Tailscale / the room LAN, or the Pi is down. Try the dashboard URL. |
 | `rust-objcopy: command not found` | Install it: see [1.3](#13-local-tools). |
 | `error: Could not connect to the bootloader (is the board in update mode?)` | The board didn't come up in the bootloader. Retry once; if it persists, tell the maintainer. |
 | `error: secure (attack-board) bootloader` | It's an attack board: see [Rules](#9-rules). |
