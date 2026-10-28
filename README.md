@@ -341,9 +341,13 @@ Board commands on the Pi (`ssh ectf@100.92.231.53 "ECTF_USER=you ~/ectf2027/ectf
 
 ## Example: the UMass 2026 eCTF HSM firmware
 
-A complete walkthrough with our 2026 competition firmware (Rust, an HSM that stores files and talks to MITRE's host tools). Use it to check your setup end to end.
+A walkthrough with our 2026 competition firmware (an HSM that stores files and talks to MITRE's host tools). Use it to check your setup end to end.
 
-**Build setup.** Copy `remote-flash.sh` and `remote-debug.sh` into the UMass repo's `firmware/` folder. Its `.cargo/config.toml` already has `runner = "./remote-flash.sh"`, alongside its own linker flags and the build settings below. The build also needs a secrets file covering every group in `PERMISSIONS`; run this from the repo root:
+**Build setup.** Clone the umass-ectf-2026 repo. Copy this repo's `remote-flash.sh` and `remote-debug.sh` into that repo's `firmware/` folder. Then in `.cargo/config.toml`, update the runner line to:
+```
+runner = "./remote-flash.sh"
+```
+The build also needs a secrets file covering every group in `PERMISSIONS`; run this from the 2026 repo root:
 
 ```sh
 uvx --with-editable ./ectf26_design --from ectf26_design secrets \
