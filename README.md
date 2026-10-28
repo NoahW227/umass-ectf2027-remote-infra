@@ -343,7 +343,7 @@ Board commands on the Pi (`ssh ectf@100.92.231.53 "ECTF_USER=you ~/ectf2027/ectf
 
 A walkthrough with our 2026 competition firmware (an HSM that stores files and talks to MITRE's host tools). Use it to check your setup end to end.
 
-**Build setup.** Clone the umass-ectf-2026 repo. Copy this repo's `remote-flash.sh` and `remote-debug.sh` into that repo's `firmware/` folder. Then in `.cargo/config.toml`, update the runner line to:
+**Build setup.** Clone the [umass-ectf-2026](https://github.com/XiXinping/umass-ectf-2026) repo. Copy this repo's `remote-flash.sh` and `remote-debug.sh` into that repo's `firmware/` folder. Then in `.cargo/config.toml`, update the runner line to:
 ```
 runner = "./remote-flash.sh"
 ```
